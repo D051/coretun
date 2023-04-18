@@ -23,85 +23,83 @@ use super::Puller;
 use super::Pusher;
 
 // ******************************************************
-// Macos native dependencies
+// Linux native dependencies
 // ******************************************************
 
 extern "C" {
-    /// Allocate a macos interface file descriptor
-    fn alloc_macos_tun(ptr: *mut u8, len: i32) -> i32;
+    /// Allocate a linux interface file descriptor
+    fn alloc_linux_tun(ptr: *mut u8, len: i32) -> i32;
 }
 
 // *****************************************************
 // Macos pusher/puller defintion and implementations
 // *****************************************************
 
-/// Macos pusher type definition -> write data to the macos interface
-pub struct MacosPusher {
+/// Linux pusher type definition -> write data to the linux interface
+pub struct LinuxPusher {
     file: File,
 }
 
-/// Macos puller type definition -> read data from the macos interface
-pub struct MacosPuller {
+/// Linux puller type definition -> read data from the linux interface
+pub struct LinuxPuller {
     file: File,
 }
 
-/// Macos pusher type pusher trait implementation
-impl Pusher for MacosPusher {
-    /// Push/Write data to the macos interface
+/// Linux pusher type pusher trait implementation
+impl Pusher for LinuxPusher {
+    /// Push/Write data to the linux interface
     fn push(&mut self, buf: &mut [u8]) {
         self.file.write(buf).unwrap();
-        println!("-> macos pusher pushed");
+        println!("-> linux pusher pushed");
     }
 }
 
-/// Macos puller type puller trait implementation
-impl Puller for MacosPuller {
-    /// Pull/Read data from the macos interface
+/// Linux puller type puller trait implementation
+impl Puller for LinuxPuller {
+    /// Pull/Read data from the linux interface
     fn pull(&mut self, buf: &mut [u8]) {
         self.file.read(buf).unwrap();
-        println!("<- macos puller pulled");
+        println!("<- linux puller pulled");
     }
 }
 
 // *****************************************************
-// Macos interface type definition and implementations
+// Linux interface type definition and implementations
 // *****************************************************
 
-/// Macos interface type definition
-pub struct MacosInterface {
+/// Linux interface type definition
+pub struct LinuxInterface {
     fd: i32,
 }
 
-impl Interface for MacosInterface {
-    /// Macos pusher type for this interface
-    type PUSHER = MacosPusher;
-    /// Macos puller type for this interface
-    type PULLER = MacosPuller;
-    /// Create a new macos interface
+impl Interface for LinuxInterface {
+    /// Linux pusher type for this interface
+    type PUSHER = LinuxPusher;
+    /// Linux puller type for this interface
+    type PULLER = LinuxPuller;
+    /// Create a new linux interface
     fn open(name: &mut [u8]) -> Result<Self, ErrorOS> {
-        // allocate the macos interface
-        let result: i32 = unsafe { alloc_macos_tun(name.as_mut_ptr(), name.len() as i32) };
+        // allocate the linux interface
+        let result: i32 = unsafe { alloc_linux_tun(name.as_mut_ptr(), name.len() as i32) };
         // parse the result
         let fd: i32 = match result {
             // return the error
-            -1 => return Err(ErrorOS::MacosErr("OpenErr".into())),
-            -2 => return Err(ErrorOS::MacosErr("InfoErr".into())),
-            -3 => return Err(ErrorOS::MacosErr("AddrErr".into())),
-            -4 => return Err(ErrorOS::MacosErr("NameErr".into())),
+            -1 => return Err(ErrorOS::LinuxErr("OpenErr".into())),
+            -2 => return Err(ErrorOS::LinuxErr("CtrlErr".into())),
             // get the interface
             _ => result,
         };
-        // return macos interface
-        Ok(MacosInterface { fd: fd })
+        // return linux interface
+        Ok(LinuxInterface { fd: fd })
     }
-    /// Get the macos interface pusher, only one pusher per interface is allowed to be in scope at a time
+    /// Get the linux interface pusher, only one pusher per interface is allowed to be in scope at a time
     fn pusher(&mut self) -> Self::PUSHER {
         let file: File = unsafe { File::from_raw_fd(self.fd) };
-        MacosPusher { file }
+        LinuxPusher { file }
     }
     /// Get the macos interface puller, only one puller per interface is allowed to be in scope at a time
     fn puller(&mut self) -> Self::PULLER {
         let file: File = unsafe { File::from_raw_fd(self.fd) };
-        MacosPuller { file }
+        LinuxPuller { file }
     }
 }

@@ -27,7 +27,7 @@
 
 // Macos error definitions
 enum error {
-    SOCK_ERR = -1,
+    OPEN_ERR = -1,
     INFO_ERR = -2,
     ADDR_ERR = -3,
     NAME_ERR = -4,
@@ -37,7 +37,7 @@ enum error {
 void show_error(enum error err) {
     switch(err){
         // error cases
-        case SOCK_ERR : perror("PLATTFORM ERROR: sock error"); break;
+        case OPEN_ERR : perror("PLATTFORM ERROR: open error"); break;
         case INFO_ERR : perror("PLATTFORM ERROR: info error"); break;
         case ADDR_ERR : perror("PLATTFORM ERROR: addr error"); break;
         case NAME_ERR : perror("PLATTFORM ERROR: name error"); break;
@@ -54,11 +54,11 @@ void show_error(enum error err) {
 int alloc_macos_tun(unsigned char *ptr, int len) {
     // allocate process variables
     int result;
-    // get the socket file descriptor
+    // get the tun file descriptor
     int fd = socket(PF_SYSTEM, SOCK_DGRAM, SYSPROTO_CONTROL);
     if (fd < 0) {
-        show_error(SOCK_ERR);
-        return (int)SOCK_ERR;
+        show_error(OPEN_ERR);
+        return (int)OPEN_ERR;
     }
     // construct the control message
     struct ctl_info info;
@@ -84,7 +84,7 @@ int alloc_macos_tun(unsigned char *ptr, int len) {
         show_error(ADDR_ERR);
         return (int)ADDR_ERR;
     }
-    // get the name of the utun adapter
+    // get the name of the tun interface
     result = getsockopt(fd, SYSPROTO_CONTROL, UTUN_OPT_IFNAME, ptr, (socklen_t*)&len);
     if (result < 0) {
         close(fd);
