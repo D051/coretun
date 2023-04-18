@@ -75,8 +75,10 @@ pub struct LinuxInterface {
 impl Interface for LinuxInterface {
     /// Linux pusher type for this interface
     type PUSHER = LinuxPusher;
+
     /// Linux puller type for this interface
     type PULLER = LinuxPuller;
+
     /// Create a new linux interface
     fn open(name: &mut [u8]) -> Result<Self, ErrorOS> {
         // allocate the linux interface
@@ -85,18 +87,20 @@ impl Interface for LinuxInterface {
         let fd: i32 = match result {
             // return the error
             -1 => return Err(ErrorOS::LinuxErr("OpenErr".into())),
-            -2 => return Err(ErrorOS::LinuxErr("CtrlErr".into())),
+            -2 => return Err(ErrorOS::LinuxErr("ConnErr".into())),
             // get the interface
             _ => result,
         };
         // return linux interface
         Ok(LinuxInterface { fd: fd })
     }
+
     /// Get the linux interface pusher, only one pusher per interface is allowed to be in scope at a time
     fn pusher(&mut self) -> Self::PUSHER {
         let file: File = unsafe { File::from_raw_fd(self.fd) };
         LinuxPusher { file }
     }
+
     /// Get the macos interface puller, only one puller per interface is allowed to be in scope at a time
     fn puller(&mut self) -> Self::PULLER {
         let file: File = unsafe { File::from_raw_fd(self.fd) };

@@ -75,8 +75,10 @@ pub struct MacosInterface {
 impl Interface for MacosInterface {
     /// Macos pusher type for this interface
     type PUSHER = MacosPusher;
+
     /// Macos puller type for this interface
     type PULLER = MacosPuller;
+
     /// Create a new macos interface
     fn open(name: &mut [u8]) -> Result<Self, ErrorOS> {
         // allocate the macos interface
@@ -94,11 +96,13 @@ impl Interface for MacosInterface {
         // return macos interface
         Ok(MacosInterface { fd: fd })
     }
+
     /// Get the macos interface pusher, only one pusher per interface is allowed to be in scope at a time
     fn pusher(&mut self) -> Self::PUSHER {
         let file: File = unsafe { File::from_raw_fd(self.fd) };
         MacosPusher { file }
     }
+
     /// Get the macos interface puller, only one puller per interface is allowed to be in scope at a time
     fn puller(&mut self) -> Self::PULLER {
         let file: File = unsafe { File::from_raw_fd(self.fd) };

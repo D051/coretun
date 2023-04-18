@@ -35,53 +35,43 @@
 // Linux error definitions
 enum error {
     OPEN_ERR = -1,
-    CTRL_ERR = -2,
+    CONN_ERR = -2,
 };
-
-
-// Print the error in plaintext to the console
-void show_error(enum error err) {
-    switch(err){
-        // error cases
-        case OPEN_ERR : perror("PLATTFORM ERROR: open error"); break;
-        case CTRL_ERR : perror("PLATTFORM ERROR: ctrl error"); break;
-        // default case
-        default: perror("PLATTFORM ERROR: unknown"); break;
-    }
-}
 
 // ******************************************************
 // Linux tun allocation
 // ******************************************************
 
-/**
- * Allocates a Linux TUN interface.
- *
- * @param ptr The buffer where the name of the interface will be stored.
- * @param len The length of the buffer.
- * @return The file descriptor of the TUN interface on success, or an error code on failure.
- */
-
+// Allocate a native linux tun interface
 int alloc_linux_tun(unsigned char *ptr, int len) {
-    int result;
-    int fd = open("/dev/net/tun", O_RDWR); // Open the TUN device file
+
+    // Get the file descriptor for the tun device
+    int fd = open("/dev/net/tun", O_RDWR);
     if (fd < 0) {
-        show_error(OPEN_ERR); // Show an error message if the open() call fails
+        perror("Error opening tun device");
         return (int)OPEN_ERR;
     }
-    size_t max_len = len;
-    if (IFNAMSIZ < len) { // If the buffer is too long, truncate it to the maximum length allowed
-        max_len = IFNAMSIZ;
+
+    // Determine the maximum length of the interface name
+    if (len > IFNAMSIZ) {
+        len = IFNAMSIZ;
     }
-	struct ifreq ifr;
-	memset(&ifr, 0, sizeof ifr); // Initialize the ifreq structure to zero
-    ifr.ifr_flags = IFF_TUN | IFF_NO_PI; // Set the interface type and no packet info flag
-    strncpy(ifr.ifr_name, (char*)ptr, max_len); // Copy the interface name into the ifreq structure
-	result = ioctl(fd, TUNSETIFF, &ifr); // Set the interface name and flags using the ioctl() system call
-	if (result < 0) {
-        show_error(CTRL_ERR); // Show an error message if the ioctl() call fails
-        return (int)CTRL_ERR;
-	}
-    strncpy((char*)ptr, ifr.ifr_name, max_len); // Copy the interface name back into the buffer
-    return fd; // Return the file descriptor of the TUN interface
+
+    // Initialize a struct to represent the interface
+    struct ifreq ifr = {0};
+    ifr.ifr_flags = IFF_TUN | IFF_NO_PI;
+    strncpy(ifr.ifr_name, (char*)ptr, len);
+
+    // Associate the file descriptor with the interface
+    if (ioctl(fd, TUNSETIFF, &ifr) < 0) {
+        perror("Error connecting the tun fd with interface");
+        return (int)CONN_ERR;
+    }
+
+    // Copy the interface name back into the buffer
+    strncpy((char*)ptr, ifr.ifr_name, len);
+
+    // Return the file descriptor
+    return fd;
+
 }

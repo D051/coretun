@@ -29,22 +29,9 @@
 enum error {
     OPEN_ERR = -1,
     INFO_ERR = -2,
-    ADDR_ERR = -3,
+    CONN_ERR = -3,
     NAME_ERR = -4,
 };
-
-// Print the error in plaintext to the console
-void show_error(enum error err) {
-    switch(err){
-        // error cases
-        case OPEN_ERR : perror("PLATTFORM ERROR: open error"); break;
-        case INFO_ERR : perror("PLATTFORM ERROR: info error"); break;
-        case ADDR_ERR : perror("PLATTFORM ERROR: addr error"); break;
-        case NAME_ERR : perror("PLATTFORM ERROR: name error"); break;
-        // default case
-        default: perror("PLATTFORM ERROR: unknown"); break;
-    }
-}
 
 // ******************************************************
 // Macos tun allocation
@@ -52,45 +39,47 @@ void show_error(enum error err) {
 
 // Allocate a native macos tun interface
 int alloc_macos_tun(unsigned char *ptr, int len) {
-    // allocate process variables
-    int result;
-    // get the tun file descriptor
+
+    // Get the file descriptor for the tun device
     int fd = socket(PF_SYSTEM, SOCK_DGRAM, SYSPROTO_CONTROL);
     if (fd < 0) {
-        show_error(OPEN_ERR);
+        perror("Error opening tun device");
         return (int)OPEN_ERR;
     }
-    // construct the control message
-    struct ctl_info info;
-    strncpy(info.ctl_name, UTUN_CONTROL_NAME, sizeof(info.ctl_name));
-    // execute the control message
-    result = ioctl(fd, CTLIOCGINFO, &info);
-    if (result < 0) {
+
+    // Get control information for the tun device
+    struct ctl_info control_info;
+    strncpy(control_info.ctl_name, UTUN_CONTROL_NAME, sizeof(control_info.ctl_name));
+    if (ioctl(fd, CTLIOCGINFO, &control_info) < 0) {
+        perror("Error getting control info for tun device");
         close(fd);
-        show_error(INFO_ERR);
         return (int)INFO_ERR;
     }
-    // create and configure the socket address control
-    struct sockaddr_ctl addr;
-	addr.sc_id = info.ctl_id;
-	addr.sc_len = sizeof(addr);
-	addr.sc_family = AF_SYSTEM;
-	addr.ss_sysaddr = AF_SYS_CONTROL;
-	addr.sc_unit = 0;
-    // create the tun device
-    result = connect(fd, (struct sockaddr *)&addr, sizeof(addr));
-    if (result < 0) {
+
+    // Create a socket address control for the tun device
+    struct sockaddr_ctl socket_address_control;
+    socket_address_control.sc_id = control_info.ctl_id;
+    socket_address_control.sc_len = sizeof(socket_address_control);
+    socket_address_control.sc_family = AF_SYSTEM;
+    socket_address_control.ss_sysaddr = AF_SYS_CONTROL;
+    socket_address_control.sc_unit = 0;
+
+    // Connect the socket to the tun device
+    if (connect(fd, (struct sockaddr *)&socket_address_control, sizeof(socket_address_control)) < 0) {
+        perror("Error connecting to tun device");
         close(fd);
-        show_error(ADDR_ERR);
-        return (int)ADDR_ERR;
+        return (int)CONN_ERR;
     }
-    // get the name of the tun interface
-    result = getsockopt(fd, SYSPROTO_CONTROL, UTUN_OPT_IFNAME, ptr, (socklen_t*)&len);
-    if (result < 0) {
+
+    // Get the interface name for the tun device
+    socklen_t interface_name_length = len;
+    if (getsockopt(fd, SYSPROTO_CONTROL, UTUN_OPT_IFNAME, ptr, &interface_name_length) < 0) {
+        perror("Error getting tun interface name");
         close(fd);
-        show_error(NAME_ERR);
         return (int)NAME_ERR;
     }
-    // return the file descriptor
+
+    // Return the file descriptor
     return fd;
+
 }

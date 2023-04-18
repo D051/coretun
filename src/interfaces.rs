@@ -35,10 +35,10 @@ impl ErrorOS {
     /// Print the error to the console
     pub fn print(&self) {
         match self {
-            ErrorOS::None => println!("No error"),
-            ErrorOS::LinuxErr(err) => println!("LINUX ERROR: {}", err),
-            ErrorOS::MacosErr(err) => println!("MACOS ERROR: {}", err),
-            ErrorOS::Unknown => println!("Unknown error"),
+            ErrorOS::None => println!("NO OS ERROR"),
+            ErrorOS::LinuxErr(err) => println!("LINUX OS ERROR: {}", err),
+            ErrorOS::MacosErr(err) => println!("MACOS OS ERROR: {}", err),
+            ErrorOS::Unknown => println!("UNKNOWN OS ERROR"),
         }
     }
 }
@@ -46,7 +46,22 @@ impl ErrorOS {
 /// IO error enum
 pub enum ErrorIO {
     None,
-    Some,
+    LinuxErr(String),
+    MacosErr(String),
+    Unknown,
+}
+
+/// IO error enum implementations
+impl ErrorIO {
+    /// Print the error to the console
+    pub fn print(&self) {
+        match self {
+            ErrorIO::None => println!("NO IO ERROR"),
+            ErrorIO::LinuxErr(err) => println!("LINUX IO ERROR: {}", err),
+            ErrorIO::MacosErr(err) => println!("MACOS IO ERROR: {}", err),
+            ErrorIO::Unknown => println!("UNKNOWN IO ERROR"),
+        }
+    }
 }
 
 // *****************************************************

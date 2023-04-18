@@ -23,7 +23,7 @@ fn main() {
     let mut build: cc::Build = cc::Build::new();
     // add include path for macos
     #[cfg(target_os = "macos")]
-    let builder: &mut Build = build.file("./src/interfaces/macos_refactor.c");
+    let builder: &mut Build = build.file("./src/interfaces/macos.c");
     // add include path for linux
     #[cfg(target_os = "linux")]
     let builder: &mut Build = build.file("./src/interfaces/linux.c");
