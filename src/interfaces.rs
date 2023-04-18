@@ -18,13 +18,23 @@ pub mod linux;
 // #[cfg(target_os = "macos")]
 pub mod macos;
 
-
 // *****************************************************
 // Error definitions
 // *****************************************************
 
-pub enum ErrorIO {
+/// OS error enum
+pub enum ErrorOS {
+    None,
+    LinuxErr(String),
+    MacosErr(String),
+    Unknown,
+}
 
+/// IO error enum
+pub enum ErrorIO {
+    None,
+    PermissionErr,
+    Unknown,
 }
 
 // *****************************************************
@@ -39,7 +49,7 @@ pub trait Pusher {
 
 /// Puller trait definition
 pub trait Puller {
-    /// Push/Read data from the interface
+    /// Pull/Read data from the interface
     fn pull(&self, buf: &mut [u8]);
 }
 
@@ -50,7 +60,7 @@ pub trait Interface {
     /// Puller type for this interface
     type PULLER: Puller;
     /// create a new interface
-    fn new(ptr: *mut u8) -> Self;
+    fn open(name: &mut [u8]) -> Result<Self, ErrorOS> where Self: Sized;
     /// get the interface pusher, only one pusher per interface can be in scope at a time
     fn pusher(&mut self) -> Self::PUSHER;
     /// get the interface puller, only one puller per interface can be in scope at a time

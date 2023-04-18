@@ -17,6 +17,8 @@ pub mod interfaces;
 pub use interfaces::Interface;
 pub use interfaces::Puller;
 pub use interfaces::Pusher;
+pub use interfaces::ErrorOS;
+pub use interfaces::ErrorIO;
 
 // *****************************************************
 // Adapter type definition and implementations
@@ -32,20 +34,25 @@ pub struct Adapter<I: Interface> {
 /// Adapter type implementations
 impl<I: Interface> Adapter<I> {
     /// Open a new coretun adapter
-    pub fn open(name: &str) -> Self {
+    pub fn open(name: &str) -> Result<Self, ErrorOS> {
         // build name buffers
         let mut kernel_name: [u8; 24] = [0u8; 24];
         let mut custom_name: [u8; 24] = [0u8; 24];
         kernel_name[0..name.len()].copy_from_slice(name.as_bytes());
         custom_name[0..name.len()].copy_from_slice(name.as_bytes());
-        // create interface
-        let interface: I = I::new(kernel_name.as_mut_ptr());
-        // return adapter
-        Adapter {
+        // build interface
+        let interface: I =  match I::open(&mut kernel_name) {
+            Ok(interface) => interface,
+            Err(error) => return Err(error),
+        };
+        // build adapter
+        let adapter: Adapter<I> = Adapter {
             kernel_name,
             custom_name,
             interface,
-        }
+        };
+        // return the adapter
+        Ok(adapter)
     }
     /// Get the adapter interface pusher
     pub fn pusher(&mut self) -> I::PUSHER {
@@ -106,11 +113,11 @@ impl<I: Interface> Adapter<I> {
 // *****************************************************
 
 #[cfg(target_os = "linux")]
-pub fn open(name: &str) -> Adapter<interfaces::linux::LinuxInterface> {
+pub fn open(name: &str) -> Result<Adapter<interfaces::linux::LinuxInterface>, ErrorOS> {
     Adapter::open(name)
 }
 
 #[cfg(target_os = "macos")]
-pub fn open(name: &str) -> Adapter<interfaces::macos::MacosInterface> {
+pub fn open(name: &str) -> Result<Adapter<interfaces::macos::MacosInterface>, ErrorOS> {
     Adapter::open(name)
 }

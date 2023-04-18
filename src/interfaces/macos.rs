@@ -13,8 +13,17 @@
 // *****************************************************
 
 use super::Interface;
-use super::Pusher;
 use super::Puller;
+use super::Pusher;
+use super::ErrorOS;
+
+// ******************************************************
+// Macos native dependencies
+// ******************************************************
+
+extern "C" {
+    fn alloc_macos_tun(ptr: *mut u8, len: i32) -> i32;
+}
 
 // *****************************************************
 // Macos pusher type definition and implementations
@@ -29,6 +38,7 @@ pub struct MacosPusher {
 impl Pusher for MacosPusher {
     /// Push/Write data to the macos interface
     fn push(&self, buf: &mut [u8]) {
+        buf[0] = self.fd as u8;
         println!("macos pusher push ->");
     }
 }
@@ -44,8 +54,9 @@ pub struct MacosPuller {
 
 /// Macos puller trait implementation
 impl Puller for MacosPuller {
-    /// Push/Read data from the macos interface
+    /// Pull/Read data from the macos interface
     fn pull(&self, buf: &mut [u8]) {
+        buf[0] = self.fd as u8;
         println!("macos puller pull <-");
     }
 }
@@ -65,15 +76,33 @@ impl Interface for MacosInterface {
     /// Macos puller type for this interface
     type PULLER = MacosPuller;
     /// create a new macos interface
-    fn new(ptr: *mut u8) -> Self {
-        MacosInterface { fd: 0 }
+    fn open(name: &mut [u8]) -> Result<Self, ErrorOS> {
+        // Create the pointer and length of the name
+        let ptr: *mut u8 = name.as_mut_ptr();
+        let len: i32 = name.len() as i32;
+        // Allocate the macos interface
+        let res: i32 = unsafe { alloc_macos_tun(ptr, len) };
+        // Check the result
+        let fd: i32 = match res {
+            // Return the error
+            -1 => return Err(ErrorOS::MacosErr("SockErr".into())),
+            -2 => return Err(ErrorOS::MacosErr("InfoErr".into())),
+            -3 => return Err(ErrorOS::MacosErr("AddrErr".into())),
+            -4 => return Err(ErrorOS::MacosErr("NameErr".into())),
+            // Get the interface
+            _ => res,
+        };
+        // build the interface
+        let interface: MacosInterface = MacosInterface { fd: fd };
+        // return the interface
+        Ok(interface)
     }
     /// get the macos interface pusher, only one pusher per interface can be in scope at a time
     fn pusher(&mut self) -> Self::PUSHER {
-        MacosPusher { fd: 0 }
+        MacosPusher { fd: self.fd }
     }
     /// get the macos interface puller, only one puller per interface can be in scope at a time
     fn puller(&mut self) -> Self::PULLER {
-        MacosPuller { fd: 0 }
+        MacosPuller { fd: self.fd }
     }
 }
