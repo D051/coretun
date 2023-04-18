@@ -54,36 +54,34 @@ void show_error(enum error err) {
 // Linux tun allocation
 // ******************************************************
 
-// Allocate a native linux tun interface
+/**
+ * Allocates a Linux TUN interface.
+ *
+ * @param ptr The buffer where the name of the interface will be stored.
+ * @param len The length of the buffer.
+ * @return The file descriptor of the TUN interface on success, or an error code on failure.
+ */
+
 int alloc_linux_tun(unsigned char *ptr, int len) {
-    // allocate process variables
     int result;
-    // get the tun file descriptor
-    int fd = open("/dev/net/tun", O_RDWR);
+    int fd = open("/dev/net/tun", O_RDWR); // Open the TUN device file
     if (fd < 0) {
-        show_error(OPEN_ERR);
+        show_error(OPEN_ERR); // Show an error message if the open() call fails
         return (int)OPEN_ERR;
     }
-    // get the max length of the interface name
     size_t max_len = len;
-    if (IFNAMSIZ < len) {
+    if (IFNAMSIZ < len) { // If the buffer is too long, truncate it to the maximum length allowed
         max_len = IFNAMSIZ;
     }
-    // configure the tun interface
 	struct ifreq ifr;
-	memset(&ifr, 0, sizeof ifr);
-    ifr.ifr_flags = IFF_TUN | IFF_NO_PI;
-    strncpy(ifr.ifr_name, (char*)ptr, max_len);
-    // apply configuration to interface
-	result = ioctl(fd, TUNSETIFF, &ifr);
+	memset(&ifr, 0, sizeof ifr); // Initialize the ifreq structure to zero
+    ifr.ifr_flags = IFF_TUN | IFF_NO_PI; // Set the interface type and no packet info flag
+    strncpy(ifr.ifr_name, (char*)ptr, max_len); // Copy the interface name into the ifreq structure
+	result = ioctl(fd, TUNSETIFF, &ifr); // Set the interface name and flags using the ioctl() system call
 	if (result < 0) {
-        show_error(CTRL_ERR);
+        show_error(CTRL_ERR); // Show an error message if the ioctl() call fails
         return (int)CTRL_ERR;
 	}
-    // get the name of the tun interface
-    strncpy((char*)ptr, ifr.ifr_name, max_len);
-    // return the file descriptor
-    return fd;
+    strncpy((char*)ptr, ifr.ifr_name, max_len); // Copy the interface name back into the buffer
+    return fd; // Return the file descriptor of the TUN interface
 }
-
-
