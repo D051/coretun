@@ -30,11 +30,23 @@ pub enum ErrorOS {
     Unknown,
 }
 
+/// OS error enum implementations
+impl ErrorOS {
+    /// Print the error to the console
+    pub fn print(&self) {
+        match self {
+            ErrorOS::None => println!("No error"),
+            ErrorOS::LinuxErr(err) => println!("LINUX ERROR: {}", err),
+            ErrorOS::MacosErr(err) => println!("MACOS ERROR: {}", err),
+            ErrorOS::Unknown => println!("Unknown error"),
+        }
+    }
+}
+
 /// IO error enum
 pub enum ErrorIO {
     None,
-    PermissionErr,
-    Unknown,
+    Some,
 }
 
 // *****************************************************
@@ -59,10 +71,10 @@ pub trait Interface {
     type PUSHER: Pusher;
     /// Puller type for this interface
     type PULLER: Puller;
-    /// create a new interface
+    /// Create a new interface
     fn open(name: &mut [u8]) -> Result<Self, ErrorOS> where Self: Sized;
-    /// get the interface pusher, only one pusher per interface can be in scope at a time
+    /// Get the interface pusher, only one pusher per interface is allowed to be in scope at a time
     fn pusher(&mut self) -> Self::PUSHER;
-    /// get the interface puller, only one puller per interface can be in scope at a time
+    /// Get the interface puller, only one puller per interface is allowed to be in scope at a time
     fn puller(&mut self) -> Self::PULLER;
 }

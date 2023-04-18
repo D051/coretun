@@ -12,22 +12,22 @@
 // Imports / Exports
 // *****************************************************
 
-
 use std::fs::File;
 use std::io::Read;
 use std::io::Write;
 use std::os::fd::FromRawFd;
 
+use super::ErrorOS;
 use super::Interface;
 use super::Puller;
 use super::Pusher;
-use super::ErrorOS;
 
 // ******************************************************
 // Macos native dependencies
 // ******************************************************
 
 extern "C" {
+    /// Allocate a macos interface file descriptor
     fn alloc_macos_tun(ptr: *mut u8, len: i32) -> i32;
 }
 
@@ -77,36 +77,31 @@ impl Interface for MacosInterface {
     type PUSHER = MacosPusher;
     /// Macos puller type for this interface
     type PULLER = MacosPuller;
-    /// create a new macos interface
+    /// Create a new macos interface
     fn open(name: &mut [u8]) -> Result<Self, ErrorOS> {
-        // Create the pointer and length of the name
-        let ptr: *mut u8 = name.as_mut_ptr();
-        let len: i32 = name.len() as i32;
-        // Allocate the macos interface
-        let res: i32 = unsafe { alloc_macos_tun(ptr, len) };
-        // Check the result
-        let fd: i32 = match res {
-            // Return the error
+        // allocate the macos interface
+        let result: i32 = unsafe { alloc_macos_tun(name.as_mut_ptr(), name.len() as i32) };
+        // parse the result
+        let fd: i32 = match result {
+            // return the error
             -1 => return Err(ErrorOS::MacosErr("SockErr".into())),
             -2 => return Err(ErrorOS::MacosErr("InfoErr".into())),
             -3 => return Err(ErrorOS::MacosErr("AddrErr".into())),
             -4 => return Err(ErrorOS::MacosErr("NameErr".into())),
-            // Get the interface
-            _ => res,
+            // get the interface
+            _ => result,
         };
-        // build the interface
-        let interface: MacosInterface = MacosInterface { fd: fd };
-        // return the interface
-        Ok(interface)
+        // return macos interface
+        Ok(MacosInterface { fd: fd })
     }
-    /// get the macos interface pusher, only one pusher per interface can be in scope at a time
+    /// Get the macos interface pusher, only one pusher per interface is allowed to be in scope at a time
     fn pusher(&mut self) -> Self::PUSHER {
-        let file: File = unsafe {File::from_raw_fd(self.fd)};
+        let file: File = unsafe { File::from_raw_fd(self.fd) };
         MacosPusher { file }
     }
-    /// get the macos interface puller, only one puller per interface can be in scope at a time
+    /// Get the macos interface puller, only one puller per interface is allowed to be in scope at a time
     fn puller(&mut self) -> Self::PULLER {
-        let file: File = unsafe {File::from_raw_fd(self.fd)};
+        let file: File = unsafe { File::from_raw_fd(self.fd) };
         MacosPuller { file }
     }
 }
