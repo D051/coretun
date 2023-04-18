@@ -12,6 +12,12 @@
 // Imports / Exports
 // *****************************************************
 
+
+use std::fs::File;
+use std::io::Read;
+use std::io::Write;
+use std::os::fd::FromRawFd;
+
 use super::Interface;
 use super::Puller;
 use super::Pusher;
@@ -26,38 +32,34 @@ extern "C" {
 }
 
 // *****************************************************
-// Macos pusher type definition and implementations
+// Macos pusher/puller defintion and implementations
 // *****************************************************
 
-/// Macos pusher type definition
+/// Macos pusher type definition -> write data to the macos interface
 pub struct MacosPusher {
-    fd: i32,
+    file: File,
 }
 
-/// Macos pusher trait implementation
+/// Macos puller type definition -> read data from the macos interface
+pub struct MacosPuller {
+    file: File,
+}
+
+/// Macos pusher type pusher trait implementation
 impl Pusher for MacosPusher {
     /// Push/Write data to the macos interface
-    fn push(&self, buf: &mut [u8]) {
-        buf[0] = self.fd as u8;
-        println!("macos pusher push ->");
+    fn push(&mut self, buf: &mut [u8]) {
+        self.file.write(buf).unwrap();
+        println!("-> macos pusher pushed");
     }
 }
 
-// *****************************************************
-// Macos puller type definition and implementations
-// *****************************************************
-
-/// Macos puller type definition
-pub struct MacosPuller {
-    fd: i32,
-}
-
-/// Macos puller trait implementation
+/// Macos puller type puller trait implementation
 impl Puller for MacosPuller {
     /// Pull/Read data from the macos interface
-    fn pull(&self, buf: &mut [u8]) {
-        buf[0] = self.fd as u8;
-        println!("macos puller pull <-");
+    fn pull(&mut self, buf: &mut [u8]) {
+        self.file.read(buf).unwrap();
+        println!("<- macos puller pulled");
     }
 }
 
@@ -99,10 +101,12 @@ impl Interface for MacosInterface {
     }
     /// get the macos interface pusher, only one pusher per interface can be in scope at a time
     fn pusher(&mut self) -> Self::PUSHER {
-        MacosPusher { fd: self.fd }
+        let file: File = unsafe {File::from_raw_fd(self.fd)};
+        MacosPusher { file }
     }
     /// get the macos interface puller, only one puller per interface can be in scope at a time
     fn puller(&mut self) -> Self::PULLER {
-        MacosPuller { fd: self.fd }
+        let file: File = unsafe {File::from_raw_fd(self.fd)};
+        MacosPuller { file }
     }
 }

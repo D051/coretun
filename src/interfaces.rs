@@ -44,13 +44,13 @@ pub enum ErrorIO {
 /// Pusher trait definition
 pub trait Pusher {
     /// Push/Write data to the interface
-    fn push(&self, buf: &mut [u8]);
+    fn push(&mut self, buf: &mut [u8]);
 }
 
 /// Puller trait definition
 pub trait Puller {
     /// Pull/Read data from the interface
-    fn pull(&self, buf: &mut [u8]);
+    fn pull(&mut self, buf: &mut [u8]);
 }
 
 /// Interface trait definition
