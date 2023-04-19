@@ -65,20 +65,24 @@ impl ErrorIO {
 }
 
 // *****************************************************
-// Trait definitions
+// Pusher/Puller trait definitions
 // *****************************************************
 
 /// Pusher trait definition
 pub trait Pusher {
     /// Push/Write data to the interface
-    fn push(&mut self, buf: &mut [u8]);
+    fn push(&mut self, buf: &mut [u8]) -> usize;
 }
 
 /// Puller trait definition
 pub trait Puller {
     /// Pull/Read data from the interface
-    fn pull(&mut self, buf: &mut [u8]);
+    fn pull(&mut self, buf: &mut [u8]) -> usize;
 }
+
+// *****************************************************
+// Interface trait definition
+// *****************************************************
 
 /// Interface trait definition
 pub trait Interface {

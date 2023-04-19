@@ -48,18 +48,22 @@ pub struct MacosPuller {
 /// Macos pusher type pusher trait implementation
 impl Pusher for MacosPusher {
     /// Push/Write data to the macos interface
-    fn push(&mut self, buf: &mut [u8]) {
-        self.file.write(buf).unwrap();
-        println!("-> macos pusher pushed");
+    fn push(&mut self, buf: &mut [u8]) -> usize {
+        match self.file.write(buf) {
+            Ok(n) => n,
+            Err(_) => 0,
+        }
     }
 }
 
 /// Macos puller type puller trait implementation
 impl Puller for MacosPuller {
     /// Pull/Read data from the macos interface
-    fn pull(&mut self, buf: &mut [u8]) {
-        self.file.read(buf).unwrap();
-        println!("<- macos puller pulled");
+    fn pull(&mut self, buf: &mut [u8]) -> usize {
+        match self.file.read(buf) {
+            Ok(n) => n,
+            Err(_) => 0,
+        }
     }
 }
 

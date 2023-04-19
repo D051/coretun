@@ -48,18 +48,22 @@ pub struct LinuxPuller {
 /// Linux pusher type pusher trait implementation
 impl Pusher for LinuxPusher {
     /// Push/Write data to the linux interface
-    fn push(&mut self, buf: &mut [u8]) {
-        self.file.write(buf).unwrap();
-        println!("-> linux pusher pushed");
+    fn push(&mut self, buf: &mut [u8]) -> usize {
+        match self.file.write(buf) {
+            Ok(n) => n,
+            Err(_) => 0,
+        }
     }
 }
 
 /// Linux puller type puller trait implementation
 impl Puller for LinuxPuller {
     /// Pull/Read data from the linux interface
-    fn pull(&mut self, buf: &mut [u8]) {
-        self.file.read(buf).unwrap();
-        println!("<- linux puller pulled");
+    fn pull(&mut self, buf: &mut [u8]) -> usize {
+        match self.file.read(buf) {
+            Ok(n) => n,
+            Err(_) => 0,
+        }
     }
 }
 
