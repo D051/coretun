@@ -88,12 +88,16 @@ pub trait Puller {
 pub trait Interface {
     /// Pusher type for this interface
     type PUSHER: Pusher;
+
     /// Puller type for this interface
     type PULLER: Puller;
+
     /// Create a new interface
     fn open(name: &mut [u8]) -> Result<Self, ErrorOS> where Self: Sized;
+
     /// Get the interface pusher, only one pusher per interface is allowed to be in scope at a time
     fn pusher(&mut self) -> Self::PUSHER;
+
     /// Get the interface puller, only one puller per interface is allowed to be in scope at a time
     fn puller(&mut self) -> Self::PULLER;
 }

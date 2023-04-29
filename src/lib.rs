@@ -34,6 +34,7 @@ pub struct Adapter<I: Interface> {
 /// Adapter type implementations
 impl<I: Interface> Adapter<I> {
     /// Open a new coretun adapter
+
     pub fn open(name: &str) -> Result<Self, ErrorOS> {
         // build name buffers
         let mut kernel_name: [u8; 24] = [0u8; 24];
@@ -55,13 +56,16 @@ impl<I: Interface> Adapter<I> {
         Ok(adapter)
     }
     /// Get the adapter interface pusher
+    
     pub fn pusher(&mut self) -> I::PUSHER {
         self.interface.pusher()
     }
+    
     /// Get the adapter interface puller
     pub fn puller(&mut self) -> I::PULLER {
         self.interface.puller()
     }
+    
     /// Get the adapter kernel name
     pub fn kernel_name(&self) -> String {
         // find the last non-zero byte
@@ -79,6 +83,7 @@ impl<I: Interface> Adapter<I> {
         // return the kernel name
         String::from(string)
     }
+    
     /// Get the adapter custom name
     pub fn custom_name(&self) -> String {
         // find the last non-zero byte
@@ -96,6 +101,7 @@ impl<I: Interface> Adapter<I> {
         // return the custom name
         String::from(string)
     }
+    
     /// Show the adapter in the console
     pub fn show(&self) {
         println!("----------------------------------------");
